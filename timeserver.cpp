@@ -2,10 +2,18 @@
 
 TimeServer::TimeServer(QObject *parent) : QObject(parent) {
     udpSocket = new QUdpSocket(this);
-    udpSocket->bind(QHostAddress::Any, 45454);
+}
 
-    connect(udpSocket, &QUdpSocket::readyRead, this, &TimeServer::processPendingDatagrams);
-    qDebug() << "TimeServer started on port 45454.";
+bool TimeServer::startServer(quint16 port)
+{
+    if (udpSocket->bind(QHostAddress::Any, port)) {
+        connect(udpSocket, &QUdpSocket::readyRead, this, &TimeServer::processPendingDatagrams);
+        qDebug() << "Сервер запущен на порте" << port;
+        return true;
+    } else {
+        qDebug() << "Ошибка подключения к порту. Попробуйте другой порт" << port;
+        return false;
+    }
 }
 
 void TimeServer::processPendingDatagrams() {
@@ -17,7 +25,7 @@ void TimeServer::processPendingDatagrams() {
         QJsonObject jsonObject = jsonDoc.object();
 
         if (jsonObject["type"] == "get_tact") {
-            qint64 currentTact = QDateTime::currentSecsSinceEpoch(); // Используем текущее время в миллисекундах
+            qint64 currentTact = QDateTime::currentSecsSinceEpoch(); // Используем текущее время в секундах
 
             QJsonObject responseJson;
             responseJson["tact"] = currentTact;

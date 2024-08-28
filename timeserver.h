@@ -14,6 +14,7 @@ class TimeServer : public QObject {
 
 public:
     explicit TimeServer(QObject *parent = nullptr);
+    bool startServer(quint16 port);
 
 private slots:
     void processPendingDatagrams();
