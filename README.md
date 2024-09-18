@@ -20,7 +20,7 @@
 
 1. Склонируйте репозиторий:
     ```bash
-    git clone https://github.com/yourusername/timeserver.git
+    git clone https://github.com/Alextrp/timeserver.git
     cd timeserver
     ```
 
