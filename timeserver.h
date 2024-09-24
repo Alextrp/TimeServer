@@ -27,7 +27,8 @@ private slots:
 private:
     QUdpSocket *udpSocket;
     QThread *timeThread;      // Нить для обновления тактов
-    qint64 currentTact;       // Текущий синхронизированный такт
+    qint64 currentTact;  // Текущее значение такта
+    qint64 lastUpdateTime; // Время последнего обновления
 
     void logReceivedRequest(const QNetworkDatagram &datagram);
     void logSentResponse(const QHostAddress &address, quint16 port, qint64 tact);

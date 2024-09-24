@@ -1,11 +1,12 @@
 #include "timeserver.h"
-#include <QThread>
+#include <QTimer>
 
-TimeServer::TimeServer(QObject *parent) : QObject(parent), currentTact(0) {
+TimeServer::TimeServer(QObject *parent) : QObject(parent), currentTact(0), lastUpdateTime(0) {
     udpSocket = new QUdpSocket(this);
     timeThread = new QThread(this);
 
-    currentTact = QDateTime::currentSecsSinceEpoch();
+    currentTact = QDateTime::currentSecsSinceEpoch(); // Счётчик тактов начинается с 0
+    lastUpdateTime = QDateTime::currentSecsSinceEpoch(); // Фиксируем текущее время
 
     connect(timeThread, &QThread::started, this, &TimeServer::startTactUpdate);
     timeThread->start(); // Запуск отдельной нити для синхронизации тактов
@@ -37,7 +38,15 @@ void TimeServer::startTactUpdate() {
 }
 
 void TimeServer::updateTact() {
-    currentTact += 1; // Обновляем такт
+    qint64 currentTime = QDateTime::currentSecsSinceEpoch();
+
+    // Корректируем количество пропущенных тактов в зависимости от времени
+    if (lastUpdateTime > 0) {
+        qint64 timeDifference = currentTime - lastUpdateTime;
+        currentTact += timeDifference; // Увеличиваем счётчик на пропущенные такты
+    }
+
+    lastUpdateTime = currentTime; // Обновляем последнее время обновления такта
     qDebug() << "Текущий синхронизированный такт:" << currentTact;
 }
 
