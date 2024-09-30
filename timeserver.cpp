@@ -1,11 +1,16 @@
 #include "timeserver.h"
-#include <QTimer>
+#include <QCoreApplication>
+#include <QCommandLineParser>
 
-TimeServer::TimeServer(QObject *parent) : QObject(parent), currentTact(0), lastUpdateTime(0) {
+TimeServer::TimeServer(quint16 time, QObject *parent) : QObject(parent), currentTact(0), lastUpdateTime(0), logLevel(0), timeline(0) {
+    timeline = time;
+
     udpSocket = new QUdpSocket(this);
     timeThread = new QThread(this);
 
-    currentTact = QDateTime::currentSecsSinceEpoch(); // Счётчик тактов начинается с 0
+
+
+    currentTact = QDateTime::currentSecsSinceEpoch(); // Счётчик тактов начинается с текущего времени
     lastUpdateTime = QDateTime::currentSecsSinceEpoch(); // Фиксируем текущее время
 
     connect(timeThread, &QThread::started, this, &TimeServer::startTactUpdate);
@@ -22,19 +27,22 @@ TimeServer::~TimeServer() {
 bool TimeServer::startServer(quint16 port) {
     if (udpSocket->bind(QHostAddress::Any, port)) {
         connect(udpSocket, &QUdpSocket::readyRead, this, &TimeServer::processPendingDatagrams);
-        qDebug() << "Сервер запущен на порте" << port;
+        if (logLevel > 0) {
+            qDebug() << "Сервер запущен на порте" << port;
+        }
         return true;
     } else {
-        qDebug() << "Ошибка подключения к порту. Попробуйте другой порт" << port;
+        if (logLevel > 0) {
+            qDebug() << "Ошибка подключения к порту. Попробуйте другой порт" << port;
+        }
         return false;
     }
 }
 
 void TimeServer::startTactUpdate() {
-    // Этот таймер будет обновлять такты каждую секунду
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &TimeServer::updateTact);
-    timer->start(1000); // Обновляем каждую секунду
+    timer->start(timeline); // Обновляем в зависимости от шкалы времени
 }
 
 void TimeServer::updateTact() {
@@ -47,7 +55,9 @@ void TimeServer::updateTact() {
     }
 
     lastUpdateTime = currentTime; // Обновляем последнее время обновления такта
-    qDebug() << "Текущий синхронизированный такт:" << currentTact;
+    if (logLevel > 0) {
+        qDebug() << "Текущий синхронизированный такт:" << currentTact;
+    }
 }
 
 void TimeServer::processPendingDatagrams() {
@@ -59,7 +69,6 @@ void TimeServer::processPendingDatagrams() {
         QJsonObject jsonObject = jsonDoc.object();
 
         if (jsonObject["type"] == "get_tact") {
-            // Отправляем текущий такт, поддерживаемый в отдельной нити
             QJsonObject responseJson;
             responseJson["tact"] = currentTact;
 
@@ -72,10 +81,23 @@ void TimeServer::processPendingDatagrams() {
 }
 
 void TimeServer::logReceivedRequest(const QNetworkDatagram &datagram) {
-    qDebug() << "Received request from" << datagram.senderAddress().toString()
-             << "on port" << datagram.senderPort() << "- data:" << datagram.data();
+    if (logLevel > 1) {
+        qDebug() << "Получен запрос от" << datagram.senderAddress().toString()
+                 << "на порту" << datagram.senderPort() << "- данные:" << datagram.data();
+    }
 }
 
 void TimeServer::logSentResponse(const QHostAddress &address, quint16 port, qint64 tact) {
-    qDebug() << "Sent synchronized tact:" << tact << "to" << address.toString() << "on port" << port;
+    if (logLevel > 1) {
+        qDebug() << "Отправлен синхронизированный такт:" << tact << "на" << address.toString() << "на порту" << port;
+    }
 }
+
+void TimeServer::setLogLevel(int level) {
+    logLevel = level;
+}
+
+void TimeServer::setTimeline(int time){
+    timeline = time;
+}
+

@@ -8,27 +8,31 @@
 #include <QDateTime>
 #include <QNetworkDatagram>
 #include <QDebug>
-#include <QThread>
 #include <QTimer>
+#include <QThread>
 
 class TimeServer : public QObject {
     Q_OBJECT
 
 public:
-    explicit TimeServer(QObject *parent = nullptr);
+    explicit TimeServer(quint16 timeline, QObject *parent = nullptr);
     ~TimeServer();
     bool startServer(quint16 port);
+    void setLogLevel(int level);
+    void setTimeline(int timeline);
 
 private slots:
     void processPendingDatagrams();
-    void startTactUpdate();   // Метод для запуска обновления тактов
-    void updateTact();        // Метод для обновления такта
+    void startTactUpdate();
+    void updateTact();
 
 private:
     QUdpSocket *udpSocket;
-    QThread *timeThread;      // Нить для обновления тактов
-    qint64 currentTact;  // Текущее значение такта
-    qint64 lastUpdateTime; // Время последнего обновления
+    QThread *timeThread;
+    qint64 currentTact;        // Счётчик тактов
+    qint64 lastUpdateTime;     // Время последнего обновления тактов
+    int logLevel;              // Уровень логирования
+    int timeline;              // Шкала времени
 
     void logReceivedRequest(const QNetworkDatagram &datagram);
     void logSentResponse(const QHostAddress &address, quint16 port, qint64 tact);
