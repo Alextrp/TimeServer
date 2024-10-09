@@ -8,10 +8,8 @@ TimeServer::TimeServer(quint16 time, QObject *parent) : QObject(parent), current
     udpSocket = new QUdpSocket(this);
     timeThread = new QThread(this);
 
-
-
-    currentTact = QDateTime::currentSecsSinceEpoch(); // Счётчик тактов начинается с текущего времени
-    lastUpdateTime = QDateTime::currentSecsSinceEpoch(); // Фиксируем текущее время
+    currentTact = QDateTime::currentMSecsSinceEpoch(); // Счётчик тактов начинается с текущего времени
+    lastUpdateTime = QDateTime::currentMSecsSinceEpoch(); // Фиксируем текущее время
 
     connect(timeThread, &QThread::started, this, &TimeServer::startTactUpdate);
     timeThread->start(); // Запуск отдельной нити для синхронизации тактов
@@ -27,9 +25,9 @@ TimeServer::~TimeServer() {
 bool TimeServer::startServer(quint16 port) {
     if (udpSocket->bind(QHostAddress::Any, port)) {
         connect(udpSocket, &QUdpSocket::readyRead, this, &TimeServer::processPendingDatagrams);
-        if (logLevel > 0) {
-            qDebug() << "Сервер запущен на порте" << port;
-        }
+
+        qDebug() << "Сервер запущен на порте" << port;
+
         return true;
     } else {
         if (logLevel > 0) {
@@ -46,15 +44,8 @@ void TimeServer::startTactUpdate() {
 }
 
 void TimeServer::updateTact() {
-    qint64 currentTime = QDateTime::currentSecsSinceEpoch();
-
-    // Корректируем количество пропущенных тактов в зависимости от времени
-    if (lastUpdateTime > 0) {
-        qint64 timeDifference = currentTime - lastUpdateTime;
-        currentTact += timeDifference; // Увеличиваем счётчик на пропущенные такты
-    }
-
-    lastUpdateTime = currentTime; // Обновляем последнее время обновления такта
+    currentTact++; // Увеличиваем такт ровно на 1
+    lastUpdateTime = QDateTime::currentMSecsSinceEpoch(); // Обновляем время
     if (logLevel > 0) {
         qDebug() << "Текущий синхронизированный такт:" << currentTact;
     }
@@ -97,7 +88,6 @@ void TimeServer::setLogLevel(int level) {
     logLevel = level;
 }
 
-void TimeServer::setTimeline(int time){
+void TimeServer::setTimeline(int time) {
     timeline = time;
 }
-

@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
     QString defaultPort = config.contains("port") ? QString::number(config["port"].toInt()) : "1234";
     QString defaultLogLevel = config.contains("logLevel") ? QString::number(config["logLevel"].toInt()) : "0";
-    QString defaultTimeline = config.contains("timeline") ? QString::number(config["timeline"].toInt()) : "500";
+    QString defaultTimeline = config.contains("timeline") ? QString::number(config["timeline"].toInt()) : "1000";
 
     QCommandLineOption portOption(QStringList() << "p" << "port", "Указать порт для сервера.", "port", defaultPort);
     parser.addOption(portOption);
@@ -78,11 +78,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
-
     quint16 timeline = parser.value(timelineOption).toUInt(&ok);
-    if (!ok || timeline <= 1 && timeline >= 1000) {
-        qDebug() << "Ошибка: некорректный номер порта.";
+    if (!ok || (timeline <= 1 && timeline >= 1000)) {
+        qDebug() << "Ошибка: некорректный таймлайн (Введите в пределе от 1 до 1000).";
         return 1;
     }
 
