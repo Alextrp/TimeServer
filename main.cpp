@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     }
 
     quint16 timeline = parser.value(timelineOption).toUInt(&ok);
-    if (!ok || (timeline <= 1 && timeline >= 1000)) {
+    if (!ok || timeline < 1 || timeline > 1000) {
         qDebug() << "Ошибка: некорректный таймлайн (Введите в пределе от 1 до 1000).";
         return 1;
     }
